@@ -23,7 +23,7 @@ def get_ws_config(game_map):
     ws_config = np.full(10, 0)
     for line in game_map:
         for pos in line:
-            if pos != '.' and pos != 'A' and pos != '\n':
+            if pos != '.' and pos != 'A' and pos != '#' and pos != '\n':
                 ws_config[0] += 1
                 ws_config[int(pos)] += 1
 
