@@ -36,5 +36,5 @@ if __name__ == '__main__':
         sys.stdout.write('OK\n')
         sys.stdout.flush()
 
-        if fid == 9000:
+        if fid == 15000:
             exit()
