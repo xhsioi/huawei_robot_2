@@ -6,8 +6,10 @@ import numpy as np
 from util import *
 from control import *
 
+bot_status = np.zeros(4)
 
-def load_path_information(workstations):
+
+def load_path_information(workstations):#计算sell序列和buy序列
     data = np.load('map2.npz')
     path_data = data['map2_path']
     length = len(workstations)
@@ -15,9 +17,45 @@ def load_path_information(workstations):
         for j in range(length):
             for k in range(2):
                 if k == 0:
-                    workstations[i].buy.append(path_data[i][j][0])
+                    flag2 = False
+                    flag1 = False
+                    test_0 = []
+                    last_x = path_data[i][j][0][0][0]
+                    last_y = path_data[i][j][0][0][1]
+                    test_0.append([last_x, last_y])
+                    for i in range(1, len(path_data[i][j][0])):
+                        if path_data[i][j][0][i][0] != path_data[i][j][0][i-1][0]:
+                            if flag2:
+                                flag2 = False
+                                test_0.append([path_data[i][j][0][i][0], path_data[i][j][0][i][1]])
+                            flag1 = True
+                        if path_data[i][j][0][i][0][1] != path_data[i][j][0][i-1][1]:
+                            if flag1:
+                                flag1 = False
+                                test_0.append([path_data[i][j][0][i][0], path_data[i][j][0][i][1]])
+                            flag2 = True
+                    test_0.remove(test_0[0])
+                    workstations[i].buy.append(test_0)
                 else:
-                    workstations[i].sell.append(path_data[i][j][1])
+                    flag2 = False
+                    flag1 = False
+                    test_0 = []
+                    last_x = path_data[i][j][0][1][0]
+                    last_y = path_data[i][j][0][1][1]
+                    test_0.append([last_x, last_y])
+                    for i in range(1, len(path_data[i][j][1])):
+                        if path_data[i][j][1][i][0] != path_data[i][j][1][i - 1][0]:
+                            if flag2:
+                                flag2 = False
+                                test_0.append([path_data[i][j][1][i][0], path_data[i][j][1][i][1]])
+                            flag1 = True
+                        if path_data[i][j][1][i][0][1] != path_data[i][j][1][i - 1][1]:
+                            if flag1:
+                                flag1 = False
+                                test_0.append([path_data[i][j][1][i][0], path_data[i][j][1][i][1]])
+                            flag2 = True
+                    test_0.remove(test_0[0])
+                    workstations[i].sell.append(test_0)
 
 
 
@@ -27,8 +65,6 @@ if __name__ == '__main__':
     #print(np.size(game_map_array), file=sys.stderr)
     ws_config = get_ws_config(game_map_array)
     wall_number, wall_config = get_wall_config(game_map_array)
-
-    bot0_status = 0
 
     # # test
     # path_0 = np.loadtxt('matrix.txt', dtype=float, delimiter=',')
@@ -87,6 +123,9 @@ if __name__ == '__main__':
         #print(bot0_status,file=sys.stderr)
         #print(bots[0].pos,file=sys.stderr)
 
+        #对机器人进行控制
+        for i in range(4):
+            bot_status[i] = control_to_goal(bots[i], test_0, bot_status[i]) #这里test0传递的是路径信息，当前机器人到某个点的路径信息
         # bot0_status = control_to_goal(bots[0], test_0, bot0_status)
         # 结束
         sys.stdout.write('OK\n')

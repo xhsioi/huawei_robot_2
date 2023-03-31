@@ -10,7 +10,7 @@ def robot_control(order, _id, value=None):  # 定义了一个名为robot_control
         sys.stdout.write("{} {}\n".format(order, _id))
 
 
-def control_to_goal(Single_robot, path, bot0_status: object):
+def control_to_goal(Single_robot, path, bot0_status):
     target1 = np.array([path[bot0_status][0], path[bot0_status][1]])
     # print(target1, file=sys.stderr)
     # print(Single_robot.pos, file=sys.stderr)
@@ -25,16 +25,16 @@ def control_to_goal(Single_robot, path, bot0_status: object):
         err -= 2.0 * math.pi
     while err < -math.pi:
         err += 2.0 * math.pi
-    print(bot0_status,file = sys.stderr)
-    print(err,file = sys.stderr)
+    print(bot0_status, file=sys.stderr)
+    print(err, file=sys.stderr)
 
     if dis < 0.5:
         robot_control("rotate", Single_robot.id - 1, 0)
         robot_control("forward", Single_robot.id - 1, 0)
         bot0_status = bot0_status + 1
     else:
-        if np.fabs(err) > np.pi/32:
-            robot_control("rotate", Single_robot.id - 1, err*4)
+        if np.fabs(err) > np.pi / 32:
+            robot_control("rotate", Single_robot.id - 1, err * 4)
             robot_control("forward", Single_robot.id - 1, 1.5)
         else:
             robot_control("forward", Single_robot.id - 1, 4)
