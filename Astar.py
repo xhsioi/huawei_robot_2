@@ -7,6 +7,7 @@ Created on Wed Mar 29 16:17:43 2023
 
 import math
 import numpy as np
+from model import *
 #地图大小50×50米
 MAP_SIZE = (50, 50)
 
@@ -34,13 +35,16 @@ def astar(start, goal, obstacles,R):
     closed_set = set()
     current = start
     open_set.add(current)
-
+    counter=1
     while open_set:
+        counter+=1
+        if counter>=10000:
+            return None
         current = min(open_set, key=lambda x: x.g + x.h)
         open_set.remove(current)
         closed_set.add(current)
 
-        if current == goal:
+        if get_distance(current, goal)<0.4:
             path = []
             while current:
                 path.append(current)
@@ -69,43 +73,53 @@ def is_valid_location(x, y, obstacles,R):
     if x <= 0.25 or x >= 49.75 or y <= 0.25 or y >= 49.75: #超出边界，违法
         return False
     for obstacle in obstacles:
-        if (x > obstacle.x - R and x < obstacle.x + R and  #进入障碍物，违法
-           y > obstacle.y - R and y < obstacle.y + R):
+        if (x > obstacle.x - R-0.04 and x < obstacle.x + R+0.04 and  #进入障碍物，违法
+           y > obstacle.y - R-0.04 and y < obstacle.y + R+0.04):
             return False
     return True
 
 #获取当前点的邻居点
 def get_neighbors(node, obstacles,R):
     neighbors = []
+    if R==0.45+0.25:
+        K=4
+    else:
+        K=2
     for x in range(-1, 2):
         for y in range(-1, 2):
-            if x == 0 and y == 0:
+            if x==0 and y==0:
                 continue
-            neighbor = Node(node.x + x/2, node.y + y/2)
-            if not is_valid_location(node.x + x/2, node.y + y/2, obstacles,R):
+            
+            if not is_valid_location(node.x + x/K, node.y + y/K, obstacles,R):
                 continue
+            neighbor = Node(node.x + x/K, node.y + y/K)
             neighbors.append(neighbor)
     return neighbors
 
 def get_distance(node1, node2):
     return math.sqrt((node1.x - node2.x) ** 2 + (node1.y - node2.y) ** 2)
-
+def get_manhadundis(node1,node2):
+    return abs(node1.x - node2.x) + abs(node1.y - node2.y)
 
 
 #获取起点到目标点的路径参数：地图、起点、终点、机器人是否携带商品     #main函数只调用get_astar_path函数 其他不用
-def get_astar_path(game_map,start_location,goal_location,iscarryproduct):
-    
+def get_astar_path(game_map_array,rob_startpoint,goal,workstations,bot,iscarry):
+    print("牛牛牛\n", file=sys.stderr)
+    # game_map_array,rob_startpoint,goal,workstations,bots[i]
     obstacles=[]
-    r=0.25+0.45  #未携带产品，半径为机器人半径＋障碍物半径
-    R=r+iscarryproduct*0.08 #携带产品，半径增加
-    for i in range(len(game_map)):
-        for j in range(len(game_map)):
-            if game_map[i][j]=='#':  #如果为‘#’，则为障碍物
-                obstacle=Node(0.25+(j-1)*0.5,0.25+(100-i-1)*0.5)
+    if iscarry==0:
+        
+        R=0.25+0.45  #未携带产品，半径为机器人半径＋障碍物半径
+    else:
+        R=0.45+0.25+0.08 #携带产品，半径增加
+    for i in range(len(game_map_array)):
+        for j in range(len(game_map_array)):
+            if game_map_array[i][j]=='#':  #如果为‘#’，则为障碍物
+                obstacle=Node(0.25+(j)*0.5,(99.5-i)*0.5)
                 obstacles.append(obstacle)
                 
-    start=Node(start_location[0][0],start_location[0][1])   #起点
-    goal=Node(goal_location[0][0],goal_location[0][1])   #终点
+    start=Node(rob_startpoint[0],rob_startpoint[1])   #起点
+    goal=Node(workstations[goal].x,workstations[goal].y)   #终点
     path = astar(start, goal, obstacles,R)    #查找路径
     if path:   #找到路径则返回
         return path

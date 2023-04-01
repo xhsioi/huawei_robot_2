@@ -19,7 +19,7 @@ class Bot:
         self.x = x
         self.y = y
         
-        self.pos=np.array([[x],[y]])
+        self.pos=np.array([x,y])
         
         def get_distance(self, target):
             return np.linalg.norm(target - self.pos)
