@@ -6,57 +6,74 @@ import numpy as np
 from util import *
 from control import *
 
+#判断机器人或者工作站是否被锁
 bot_status = np.zeros(4)
+bot_fenced = np.zeros(4)
+workstation_fenced = np.zeros(50)
 
 
-def load_path_information(workstations):#计算sell序列和buy序列
-    data = np.load('map2.npz')
-    path_data = data['map2_path']
-    length = len(workstations)
-    for i in range(length):
-        for j in range(length):
-            for k in range(2):
-                if k == 0:
-                    flag2 = False
-                    flag1 = False
-                    test_0 = []
-                    last_x = path_data[i][j][0][0][0]
-                    last_y = path_data[i][j][0][0][1]
-                    test_0.append([last_x, last_y])
-                    for i in range(1, len(path_data[i][j][0])):
-                        if path_data[i][j][0][i][0] != path_data[i][j][0][i-1][0]:
-                            if flag2:
-                                flag2 = False
-                                test_0.append([path_data[i][j][0][i][0], path_data[i][j][0][i][1]])
-                            flag1 = True
-                        if path_data[i][j][0][i][0][1] != path_data[i][j][0][i-1][1]:
-                            if flag1:
-                                flag1 = False
-                                test_0.append([path_data[i][j][0][i][0], path_data[i][j][0][i][1]])
-                            flag2 = True
-                    test_0.remove(test_0[0])
-                    workstations[i].buy.append(test_0)
-                else:
-                    flag2 = False
-                    flag1 = False
-                    test_0 = []
-                    last_x = path_data[i][j][0][1][0]
-                    last_y = path_data[i][j][0][1][1]
-                    test_0.append([last_x, last_y])
-                    for i in range(1, len(path_data[i][j][1])):
-                        if path_data[i][j][1][i][0] != path_data[i][j][1][i - 1][0]:
-                            if flag2:
-                                flag2 = False
-                                test_0.append([path_data[i][j][1][i][0], path_data[i][j][1][i][1]])
-                            flag1 = True
-                        if path_data[i][j][1][i][0][1] != path_data[i][j][1][i - 1][1]:
-                            if flag1:
-                                flag1 = False
-                                test_0.append([path_data[i][j][1][i][0], path_data[i][j][1][i][1]])
-                            flag2 = True
-                    test_0.remove(test_0[0])
-                    workstations[i].sell.append(test_0)
+#函数功能：对已有的路径进行筛点操作，得到最终的路径
+#path为nx2的列表结构,path_type代表是否带有货物（0,1），radius代表筛除范围的半径
+def load_path_information(path,path_type):
+    length = len(path)
+    if path_type == 0:
+        radius = 5
+    else:
+        radius = 7
+    last = [path[0][0],path[0][1]]
+    result = [last]
+    for i in range(1,length):
+        dis = path[i] - last
+        if np.sqrt(dis[0]**2 + dis[1]**2) < radius:
+            continue
+        else:
+            last = path[i]
+            result.append(last)
+    return result
 
+
+def check_xy(x,y):
+    return 0 <= x < 100 and 0 <= y < 100
+
+
+def dfs(grid, i, j):
+    if i < 0 or i >= len(grid) or j < 0 or j >= len(grid[0]):
+        return False
+    if grid[i][j] == '#':
+        return True
+    grid[i][j] = '#'
+    res = dfs(grid, i + 1, j) and dfs(grid, i - 1, j) and dfs(grid, i, j + 1) and dfs(grid, i, j - 1)
+    grid[i][j] = '.'
+    return res
+
+
+#功能：实现获取当前工作站是否处于被锁状态，代表当前工作站的坐标，game_map代表二维地图,返回值为全新的地图
+def get_locked_workstation(game_map):
+    #先排除所有能进但是不能出的门，将这些门完全封死：
+    direction = [[0,1],[1,0],[-1,0],[0,-1]]
+    m, n = len(game_map), len(game_map[0])
+    for i in range(m):
+        for j in range(n):
+            if game_map[i] == '#':
+                for k in range(4):
+                    xx = i + direction[k][0]
+                    yy = j + direction[k][1]
+                    if check_xy(xx,yy) and game_map[xx][yy] == '.' and check_xy(xx+direction[k][0] , yy + direction[k][1]) and game_map[xx + direction[k][0]][yy + direction[k][1]] == '#':
+                        game_map[xx][yy] = '#'
+
+    bot_index = 0
+    workstation_index = 0
+    for i in range(m):
+        for j in range(n):
+            if game_map[i][j] == 'A':
+                if dfs(game_map,i,j):
+                    bot_fenced[bot_index] = 1
+                bot_index = bot_index + 1
+            elif '0' <= game_map[i][j] <= '9':
+                if dfs(game_map,i,j):
+                    workstation_fenced[workstation_index] = 1
+                workstation_index = workstation_index + 1
+    return game_map
 
 
 if __name__ == '__main__':
@@ -65,30 +82,6 @@ if __name__ == '__main__':
     #print(np.size(game_map_array), file=sys.stderr)
     ws_config = get_ws_config(game_map_array)
     wall_number, wall_config = get_wall_config(game_map_array)
-
-    # # test
-    # path_0 = np.loadtxt('matrix.txt', dtype=float, delimiter=',')
-    # # print(path_0,file=sys.stderr)
-    #
-    # flag2 = False
-    # flag1 = False
-    # test_0 = []
-    # last_x = path_0[0][0]
-    # last_y = path_0[0][1]
-    # test_0.append([last_x, last_y])
-    # for i in range(1, len(path_0)):
-    #     if path_0[i][0] != path_0[i-1][0]:
-    #         if flag2:
-    #             flag2 = False
-    #             test_0.append([path_0[i][0],path_0[i][1]])
-    #         flag1 = True
-    #     if path_0[i][1] != path_0[i-1][1]:
-    #         if flag1:
-    #             flag1 = False
-    #             test_0.append([path_0[i][0],path_0[i][1]])
-    #         flag2 = True
-    # test_0.remove(test_0[0])
-    # #print(test_0,file=sys.stderr)
 
     #加载地图信息
     fid, money, workstations, bots = get_input_var()
