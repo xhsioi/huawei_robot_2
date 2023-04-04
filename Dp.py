@@ -62,7 +62,7 @@ def optimize_path(path):
     points = [(path[i][0], path[i][1]) for i in range(len(path))]
 
     # 使用Douglas-Peucker算法对路径进行简化
-    tolerance = 0.25 # 阈值可以根据需要进行调整
+    tolerance = 0.5 # 阈值可以根据需要进行调整
     simplified_points = simplify_path(points, tolerance)
 
     # 将简化后的路径转换回原来的格式

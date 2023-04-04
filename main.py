@@ -1,4 +1,7 @@
 #vision 1.0 不考虑工作台不能达到
+"""
+vision 1.1 ,考虑路径可能找不到
+"""
 import math
 import sys
 
@@ -33,9 +36,9 @@ def find_haveproduct_stations(Single_robot):  # 如果机器人没有携带产�
         for j in range(len(workstations)):
             dis=np.linalg.norm(workstations[j].pos - Single_robot.pos)
             # dis=get_path_distence(Single_robot,j,map_all_workstation_path,"path_of_noproduct")
-            if workstations_lock[j][0] != 0:
+            if workstations_lock[j][0] != 0 or islive_worksations[j][0]==0:
                 continue
-            if ((workstations[j].product_status == 1) or (workstations[j].proc_time <= dis/10*50 and workstations[j].proc_time >= 0)):
+            if ((workstations[j].product_status == 1) or (workstations[j].proc_time <= dis/2*50 and workstations[j].proc_time >= 0)):
                 bots_to_product[0][j] = 1
     return bots_to_product    
 
@@ -47,7 +50,7 @@ def find_needmaterial_stations(bots_to_product,Single_robot):  # 如果机器人
             work_type = workstations[i].type  # 编号i工作台的产品编号
             if work_type == 1:  # 如果是1号产品，则型号为4,5,9的工作台可以收购该产品
                 for j in range(len(workstations)):
-                    if workstations_lock[j][1] != 0:  # 如果j号工作台已经成为另一个机器人的目标，则不能成为目标
+                    if workstations_lock[j][1] != 0 or islive_worksations[j][0]==0:  # 如果j号工作台已经成为另一个机器人的目标，则不能成为目标
                         continue
                     if ((workstations[j].type == 5 and workstations[j].material_status % 8 == 0) or
                             (workstations[j].type == 4 and workstations[
@@ -56,7 +59,7 @@ def find_needmaterial_stations(bots_to_product,Single_robot):  # 如果机器人
                         product_to_material[i][j] = 1
             if work_type == 2:
                 for j in range(len(workstations)):
-                    if workstations_lock[j][2] != 0:
+                    if workstations_lock[j][2] != 0  or islive_worksations[j][0]==0:
                         continue
                     if ((workstations[j].type == 4 and workstations[j].material_status < 4) or
                             (workstations[j].type == 6 and workstations[j].material_status % 8 == 0) or
@@ -64,7 +67,7 @@ def find_needmaterial_stations(bots_to_product,Single_robot):  # 如果机器人
                         product_to_material[i][j] = 1
             if work_type == 3:
                 for j in range(len(workstations)):
-                    if workstations_lock[j][3] != 0:
+                    if workstations_lock[j][3] != 0 or islive_worksations[j][0]==0:
                         continue
                     if ((workstations[j].type == 5 and workstations[j].material_status < 8) or
                             (workstations[j].type == 6 and workstations[j].material_status < 8) or
@@ -72,14 +75,14 @@ def find_needmaterial_stations(bots_to_product,Single_robot):  # 如果机器人
                         product_to_material[i][j] = 1
             if work_type == 4:
                 for j in range(len(workstations)):
-                    if workstations_lock[j][4] != 0:
+                    if workstations_lock[j][4] != 0 or islive_worksations[j][0]==0:
                         continue
                     if ((workstations[j].type == 7 and workstations[j].material_status % 32 == 0) or
                             (workstations[j].type == 9)):
                         product_to_material[i][j] = 1
             if work_type == 5:
                 for j in range(len(workstations)):
-                    if workstations_lock[j][5] != 0:
+                    if workstations_lock[j][5] != 0  or islive_worksations[j][0]==0:
                         continue
                     if ((workstations[j].type == 7 and workstations[j].material_status // 32 % 2 == 0) or
                             (workstations[j].type == 9)):
@@ -87,13 +90,15 @@ def find_needmaterial_stations(bots_to_product,Single_robot):  # 如果机器人
 
             if work_type == 6:
                 for j in range(len(workstations)):
-                    if workstations_lock[j][6] != 0:
+                    if workstations_lock[j][6] != 0 or islive_worksations[j][0]==0:
                         continue
                     if ((workstations[j].type == 7 and workstations[j].material_status < 64) or
                             (workstations[j].type == 9)):
                         product_to_material[i][j] = 1
             if work_type == 7:
                 for j in range(len(workstations)):
+                    if  islive_worksations[j][0]==0:
+                        continue
                     if fid > 50*60*5 - (np.linalg.norm(workstations[i].pos - Single_robot.pos)+np.linalg.norm(workstations[i].pos - workstations[j].pos))/5*50:
                         continue
                     if workstations[j].type == 8 or workstations[j].type == 9:
@@ -118,29 +123,47 @@ def compute_shortest_paths(Single_robot, product_to_material,map_all_workstation
                     bot_path[0][1] = k
                     
     #这里先不考虑有的路径不可达
+    
     if bot_path[0][1] ==1 and bot_path[0][0] ==1:
         return bot_path,map_all_workstation_path,start_paths
+    
+    
     if start_paths[Single_robot.id-1]["path_of_noproduct"]==None: #如果机器人i初始位置到第一个工作台的路径不可知，即初始化路径
-        bots_stop()
-        sys.stdout.write('OK\n')
-        sys.stdout.flush()
+        """
+        机器人起点到目标点没有路径
+        """
+        
+        
         pa=get_astar_path(game_map_array,rob_startpoint[Single_robot.id-1],bot_path[0][0],workstations,Single_robot,0)
-       
-        van = get_input_var() 
-        #输出帧数，开始操作
-        sys.stdout.write('%d\n' % fid)
+        if pa==None:
+            print(Single_robot.id-1,": No path from start location to ",bot_path[0][0],"workstation\n",file=sys.stderr)
+            # ispathstart2goal[:,bot_path[0][0]]=0
+            # isfreeworkstation[0][bot_path[0][0]]=0
+            bot_path[0][1] =1
+            bot_path[0][0] =1
+            print("bot_path:\n",bot_path, file=sys.stderr)
+            return bot_path,map_all_workstation_path,start_paths
+        
+        
         
         start_paths[Single_robot.id-1]["path_of_noproduct"]=pa
         start_point= np.zeros(2)
         start_point[0]=workstations[bot_path[0][0]].x
         start_point[1]=workstations[bot_path[0][0]].y
-        bots_stop()
-        sys.stdout.write('OK\n')
-        sys.stdout.flush()
+       
         pa=get_astar_path(game_map_array,start_point,bot_path[0][1],workstations,Single_robot,1)
-        van = get_input_var() 
-        #输出帧数，开始操作
-        sys.stdout.write('%d\n' % fid)
+        
+        if pa==None:
+            #print("no path from station  to station :",bot_path[0][1], bot_path[0][0],file=sys.stderr)
+            print(Single_robot.id-1,": No path from",bot_path[0][0], "workstation to ",bot_path[0][1],"workstation\n",file=sys.stderr)
+            # isfreeworkstation[0][bot_path[0][1]]=0
+            # ispathstation2station[bot_path[0][0],:]=0
+            bot_path[0][1] =1
+            bot_path[0][0] =1
+            start_paths[Single_robot.id-1]["path_of_noproduct"]=None
+            return bot_path,map_all_workstation_path,start_paths
+        
+        
         map_all_workstation_path[bot_path[0][0]][bot_path[0][1]]["path_of_product"]=pa
 
 
@@ -151,31 +174,46 @@ def compute_shortest_paths(Single_robot, product_to_material,map_all_workstation
             start_point= np.zeros(2)
             start_point[0]=workstations[rob_path_information[Single_robot.id-1][4]-1].x
             start_point[1]=workstations[rob_path_information[Single_robot.id-1][4]-1].y
-            bots_stop()
-            sys.stdout.write('OK\n')
-            sys.stdout.flush()
+            
             pa=get_astar_path(game_map_array,start_point,bot_path[0][0],workstations,Single_robot,0)
-            van = get_input_var() 
-            #输出帧数，开始操作
-            sys.stdout.write('%d\n' % fid)
+
             if pa==None:
-                print("111111111111111111:\n",bot.id,file=sys.stderr)
+                # print("no path from station  to station :",rob_path_information[Single_robot.id-1][4]-1, bot_path[0][0],file=sys.stderr)
+                print(Single_robot.id-1,": No path from",rob_path_information[Single_robot.id-1][4]-1, "workstation to ",bot_path[0][0],"workstation\n",file=sys.stderr)
+                # ispathstation2station[:,bot_path[0][0]]=0
+                # isfreeworkstation[0][bot_path[0][0]]=0
+                bot_path[0][1] =1
+                bot_path[0][0] =1
+                return bot_path,map_all_workstation_path,start_paths
+            
+            
             map_all_workstation_path[rob_path_information[Single_robot.id-1][4]-1][bot_path[0][0]]["path_of_noproduct"]=pa
             
         if map_all_workstation_path[bot_path[0][0]][bot_path[0][1]]["path_of_product"]==None:
             start_point= np.zeros(2)
             start_point[0]=workstations[bot_path[0][0]].x
             start_point[1]=workstations[bot_path[0][0]].y
-            bots_stop()
-            sys.stdout.write('OK\n')
-            sys.stdout.flush()
+            # bots_stop()
+            # sys.stdout.write('OK\n')
+            # sys.stdout.flush()
             pa=get_astar_path(game_map_array,start_point,bot_path[0][1],workstations,Single_robot,1)
-            van = get_input_var() 
-            #输出帧数，开始操作
-            sys.stdout.write('%d\n' % fid)
+            # van = get_input_var() 
+            # #输出帧数，开始操作
+            # sys.stdout.write('%d\n' % fid)
             if pa==None:
-                print("22222222222222222222:\n",bot.id,file=sys.stderr)
+                # print("no path from station  to station :",bot_path[0][0], bot_path[0][1],file=sys.stderr)
+                print(Single_robot.id-1,": No path from",bot_path[0][0], "workstation to ",bot_path[0][1],"workstation\n",file=sys.stderr)
+                # ispathstation2station[bot_path[0][0],:]=0
+                # isfreeworkstation[0][bot_path[0][1]]=0
+                bot_path[0][1] =1
+                bot_path[0][0] =1
+                return bot_path,map_all_workstation_path,start_paths
+            
+            
             map_all_workstation_path[bot_path[0][0]][bot_path[0][1]]["path_of_product"]=pa
+        
+        
+        
         
     return bot_path,map_all_workstation_path,start_paths # 确定最优路径  机器人先到bot_path【0】 再到bot_path【1】
 
@@ -184,9 +222,9 @@ def update_path(Single_robot,map_all_workstation_path,start_paths):  # 更新路
     bots_to_product = find_haveproduct_stations(Single_robot)
     # print("bots_to_product:\n",bots_to_product, file=sys.stderr)
     product_to_material = find_needmaterial_stations(bots_to_product,Single_robot)
-    print("product_to_material:\n",product_to_material, file=sys.stderr)
+    # print("product_to_material:\n",product_to_material, file=sys.stderr)
     best_path, map_all_workstation_path,start_paths= compute_shortest_paths(Single_robot, product_to_material,map_all_workstation_path,start_paths)
-    # print("best_path:\n",best_path, file=sys.stderr)
+    print("best_path:\n",best_path, file=sys.stderr)
     return best_path,map_all_workstation_path,start_paths
 
 def is_have_map(map_type):
@@ -224,25 +262,7 @@ def from_allpath_getpath(path_Node,bot):
             path[i][1]=node.y
             i+=1
     return path
-#函数功能：对已有的路径进行筛点操作，得到最终的路径
-#path为nx2的列表结构,path_type代表是否带有货物（0,1），radius代表筛除范围的半径
-# def path_optimize(path,path_type):
-#     length = len(path)
-#     if path_type == 0:
-#         radius = 5
-#     else:
-#         radius = 7
-#     last = [path[0][0],path[0][1]]
-#     result = [last]
-#     for i in range(1,length):
-#         dis = path[i] - last
-#         if np.sqrt(dis[0]**2 + dis[1]**2) < radius:
-#             continue
-#         else:
-#             last = path[i]
-#             result.append(last)
-#     return result
-  
+
 def bots_stop():
     for i in range(len(bots)):
         robot_control("forward", i,0)
@@ -252,7 +272,8 @@ def bots_stop():
       
 def bots_coordinate_motion(map_all_workstation_path,start_paths):
     for i in range(len(bots)): #分别控制每一个机器人运动
-    
+        if islive_robots[i][0]==0:
+            continue
         if rob_path_information[i][0]>=0:#如果机器人目标工作台未完成，则继续走
             goal=rob_path_information[i][0]-1
             rob_path_information[i][2]=goal+1
@@ -263,7 +284,10 @@ def bots_coordinate_motion(map_all_workstation_path,start_paths):
             rob_path_information[i][2]=goal+1
         else:#两个目标都完成了，机器人更新路径
             goal_station,map_all_workstation_path,start_paths=update_path(bots[i],map_all_workstation_path,start_paths)
-            print("goal_station:",goal_station, file=sys.stderr)
+            print("goal_station:\n",goal_station,bots[i].id, file=sys.stderr)
+            # print("ispathstation2station:\n",ispathstation2station, file=sys.stderr)
+            
+            # np.savetxt('output.txt', ispathstation2station,fmt='%d')
             if goal_station[0][0]==1 and goal_station[0][1]==1: #工作台个数太少，可能有机器人闲置，则原地转圈
                 rob_path_information[i][0]=-99
                 rob_path_information[i][1]=-99
@@ -304,6 +328,8 @@ def bots_coordinate_motion(map_all_workstation_path,start_paths):
             best_path= optimize_path(path)
             # print("path",path,"botsid",bots[i].id,bots[i].carried_item_type,file=sys.stderr)
             bot_status[i]=control_to_goal(bots[i],best_path,bot_status[i])   #加返回值
+            
+            
         else:
             path1=start_paths[i]["path_of_noproduct"]
             
@@ -332,6 +358,8 @@ def bots_coordinate_motion(map_all_workstation_path,start_paths):
   
 def bots_operator():  # 进行购买 出售操作 
     for robot in bots:
+        if islive_robots[robot.id-1][0]==0:
+            continue
         if ((robot.time_value_coe < 0.92 and robot.time_value_coe != 0) or  # 如果时间太久，直接去卖
                 (robot.carried_item_type < 0.92 and robot.carried_item_type != 0)):
             rob_path_information[robot.id - 1][0] = -abs(rob_path_information[robot.id - 1][0])
@@ -389,6 +417,9 @@ if __name__ == '__main__':
     # 获取地图(100x100数组)
     game_map_array = init()
     
+    #获取活的点
+    live_points=set_oflivepoints(game_map_array)
+    
     #获取地图的一些信息
     ws_config = get_ws_config(game_map_array)
     wall_number, wall_config = get_wall_config(game_map_array)
@@ -404,8 +435,11 @@ if __name__ == '__main__':
     workstations_lock = np.full((1, 1), 0)
     rob_path_information = np.full((1, 1), 0)  # 记录进货、出货的两个工作站的状态（-1：已完成操作；其他：未完成此操作）
     rob_startpoint = np.full((1, 1), 0)
-    robot_stop_flag=np.full((1, 1), 0)
-    
+    islive_worksations=np.full((1, 1),1)
+    islive_robots=np.full((1, 1),1)
+    # robot_stop_flag=np.full((1, 1), 0)
+    # ispathstart2goal=np.full((1, 1), 0)
+    # ispathstation2station=np.full((1, 1), 0)
     while True:
         
         # 每循环开始获取robot输入信息
@@ -428,8 +462,20 @@ if __name__ == '__main__':
             
             
             #进入A*之前应该停下
-            robot_stop_flag=np.full((len(workstations), 1),2)
-            
+            # robot_stop_flag=np.full((len(workstations), 1),2)
+            islive_worksations=np.full((len(workstations), 1),1)
+            islive_robots=np.full((len(bots), 1),1)
+            for i in range(len(workstations)):
+                if  not is_live(live_points,workstations[i].x,workstations[i].y):
+                    islive_worksations[i][0]=0
+                    
+            for i in range(len(bots)):
+                if  not is_live(live_points,bots[i].x,bots[i].y):
+                    islive_robots[i][0]=0; 
+            #ispathstart2goal
+            # ispathstart2goal=np.full((len(bots),len(workstations)),1)  #1表示可达
+            # ispathstation2station=np.full((len(workstations),len(workstations)),1)  #1表示可达
+            # isfreeworkstation=np.full((1,len(workstations)),1)  #1表示未封闭
             
             # 初始化工作台锁
             workstations_lock = np.full((len(workstations), 8), 0)
