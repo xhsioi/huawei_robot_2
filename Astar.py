@@ -78,7 +78,7 @@ def get_neighbors(node, obstacles):
         for y in range(-1, 2):
             if x ==0 and y==0:
                 continue
-            if node.x+x < 0.25 or node.x+x >49.75 or node.y+y < 0.25 or node.y+y >49.75 or Node(node.x+x/4,node.y+y/4) in obstacles:
+            if node.x+x/4 < 0.25 or node.x+x/4 >49.75 or node.y+y/4 < 0.25 or node.y+y/4 >49.75 or Node(node.x+x/4,node.y+y/4) in obstacles:
                 continue
             neighbor = Node(node.x + x / 4, node.y + y / 4)
             neighbors.append(neighbor)
