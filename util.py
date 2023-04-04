@@ -18,6 +18,16 @@ def init():
 
     return game_map
 
+def get_numbers(game_map):
+    workstations_number=0
+    bots_number=0
+    for line in game_map:
+        for pos in line:
+            if pos=='A':
+               bots_number+=1 
+            if pos != '.' and pos != 'A' and pos != '#' and pos != '\n':
+                workstations_number+=1
+                
 
 def get_ws_config(game_map):
     ws_config = np.full(10, 0)

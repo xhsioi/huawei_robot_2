@@ -95,7 +95,8 @@ def get_manhadundis(node1, node2):
 
 # 获取起点到目标点的路径参数：地图、起点、终点、机器人是否携带商品     #main函数只调用get_astar_path函数 其他不用
 def get_astar_path(game_map_array, rob_startpoint, goal, workstations, bot, iscarry):
-    print("牛牛牛\n", file=sys.stderr)
+    print("rob_startpoint:", rob_startpoint,file=sys.stderr)
+    print("goal:",goal,file=sys.stderr)
     # game_map_array,rob_startpoint,goal,workstations,bots[i]
     obstacles = set()
     for i in range(len(game_map_array)):
@@ -182,14 +183,19 @@ def find_live_points(start, obstacles):
                 open_set.add(neighbor)
     return closed_set
 
-
+def is_live(live_points,pos_x,pos_y):
+    pos=Node(pos_x,pos_y)
+    if pos in live_points:
+        return True
+    else:
+        return False
 
 
 def set_oflivepoints(map_str):
     
     
     obstacles =set()
-
+    workstations=[]
     for i in range(len(map_str)):
         for j in range(len(map_str)):
             if map_str[i][j] == '#':  # 如果为‘#’，则为障碍物
@@ -213,26 +219,29 @@ def set_oflivepoints(map_str):
                             obstacles.add(Node(x+xx/4,y+yy/4))
                             
             elif map_str[i][j]=='.':
-                start_point=Node(0.25 + j * 0.5, (99.5 - i) * 0.5)   
+                start_point=Node(0.25 + j * 0.5, (99.5 - i) * 0.5) 
+                
+            elif map_str[i][j]!='#' and map_str[i][j]!='.' and map_str[i][j]!='A' and map_str[i][j]!='\n':
+               
+                workstation=Node(0.25+(j)*0.5,(99.5-i)*0.5)
+                workstations.append(workstation)
 
     
     
     start=start_point
        
     # start=Node(start_x,start_y)
-    
+    islive_worksations=np.full((len(workstations), 1),1)
     live_poins=find_live_points(start,obstacles)
-    
-    return live_poins
+    for i in range(len(workstations)):
+        if  not is_live(live_poins,workstations[i].x,workstations[i].y):
+            islive_worksations[i][0]=0
+            
+    return islive_worksations,live_poins
 
 
 
-def is_live(live_points,pos_x,pos_y):
-    pos=Node(pos_x,pos_y)
-    if pos in live_points:
-        return True
-    else:
-        return False
+
     
 
 
