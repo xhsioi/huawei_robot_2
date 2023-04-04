@@ -429,16 +429,12 @@ if __name__ == '__main__':
     game_map_array = init()
     
     #获取工作台和机器人的数目
-    workstations_number,bots_number=get_numbers(game_map)
+    workstations_number,bots_number=get_numbers(game_map_array)
     
     #获取没有被围死的点
     islive_worksations,live_points=set_oflivepoints(game_map_array)
     
-    #获取没有被围死的机器人
-    islive_robots=np.full((bots_number, 1),1)      
-    for i in range(bots_number):
-        if  not is_live(live_points,bots[i].x,bots[i].y):
-            islive_robots[i][0]=0
+    
     
     #判断是否公示地图 这里目前都是没有
     ishavemap=is_have_map(4)
@@ -452,6 +448,9 @@ if __name__ == '__main__':
     # 初始化机器人路径信息  #vision1.0不考虑rob_path_information[][3\4]  
     rob_path_information = np.full((bots_number, 5), -100)
     
+    # 结束初始化
+    sys.stdout.write('OK\n')
+    sys.stdout.flush()
     while True:
         
         # 每循环开始获取robot输入信息
@@ -475,7 +474,11 @@ if __name__ == '__main__':
                 rob_startpoint[i][0] = bots[i].x
                 rob_startpoint[i][1] = bots[i].y
         
-            
+            #获取没有被围死的机器人
+            islive_robots=np.full((bots_number, 1),1)      
+            for i in range(bots_number):
+                if  not is_live(live_points,bots[i].x,bots[i].y):
+                    islive_robots[i][0]=0
         
             # print("map_all_workstation_path:\n",map_all_workstation_path[1][5]["path_of_noproduct"], file=sys.stderr)
         

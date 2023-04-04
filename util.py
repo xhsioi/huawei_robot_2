@@ -12,9 +12,7 @@ def init():
     while input() != "OK":
         pass
 
-    # 结束初始化
-    sys.stdout.write('OK\n')
-    sys.stdout.flush()
+    
 
     return game_map
 
@@ -27,7 +25,7 @@ def get_numbers(game_map):
                bots_number+=1 
             if pos != '.' and pos != 'A' and pos != '#' and pos != '\n':
                 workstations_number+=1
-                
+    return workstations_number,  bots_number
 
 def get_ws_config(game_map):
     ws_config = np.full(10, 0)
