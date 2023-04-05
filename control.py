@@ -1,8 +1,11 @@
 import numpy as np
 import sys
 import math
+import random
+import time
 
 bot_location = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]
+bot_locked = np.full(4, False)
 
 
 class Point:
@@ -44,7 +47,6 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
     Single_robot = bots[index]
     connect_set = [-1, 1]
     # 防止撞死：
-    bot_location[Single_robot.id - 1] = np.array([Single_robot.x, Single_robot.y])
     for j in range(4):
         if j != bots[index].id - 1 and type(path[j]) is list:
             if j > index:
@@ -79,10 +81,12 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
                     robot_control("rotate", bots[j].id - 1, connect_set[1] * np.pi * 10)
                     return bot0_status, bot_control
 
+    # 如果不存在路径，保持静止状态
     if path[index][0][0] == 0:
         robot_control("rotate", Single_robot.id - 1, 0)
         robot_control("forward", Single_robot.id - 1, 0)
         return bot0_status, bot_control
+    # 当路径上存在目标，进行直行、旋转、防撞死等操作
     else:
         bot0_status_i = int(bot0_status[index])
         target1 = np.array(
@@ -98,26 +102,50 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
         while err < -math.pi:
             err += 2.0 * math.pi
 
-        if bot_location[index][0]!=0 and bot_location[index][1]!=0 and distance(Point(bots[index].x, bots[index].y),
-                                                      Point(bot_location[index][0], bot_location[index][1])) < 0.1:
-            robot_control("forward", Single_robot.id - 1, -2)
-        elif bot0_status[index]%10 == 0:
-            bot_location[index][0]=bots[index].x
-            bot_location[index][1]=bots[index].y
+        #这里取两个随机数，用于解决撞死后的后退、旋转的问题
+        random.seed(time.time())
+        random_index = random.randint(1, 10)
+        random_index_1 = random.randint(1, 20)
+        #如果已经标记为撞死，或者接近撞死状态（与之前的位置信息进行比较）
+        if bot_locked[index] or (bot_location[index][0] != 0 and bot_location[index][1] != 0 and distance(
+                Point(bots[index].x, bots[index].y),
+                Point(bot_location[index][0], bot_location[index][1])) < 0.001):
+            bot_locked[index] = True
+            #如果一个机器人进入撞死的处理状态，那么其他机器人不进行此过程，保证互斥
+            for i in range(4):
+                if bot_locked[i] is True:
+                    bot_locked[index] = False
+                    break
+            if bot_locked[index]:
+                #构建随机的旋转方向和直行反向，方便机器人更快地解除锁死状态
+                robot_control("forward", Single_robot.id - 1, np.power(-1, random_index_1) * 6)
+                robot_control("rotate", Single_robot.id - 1, np.power(-1, random_index) * Single_robot.toward * 100)
+                bot_locked[index] = True
+                if distance(Point(bots[index].x, bots[index].y),
+                            Point(bot_location[index][0], bot_location[index][1])) > 0.25:
+                    bot_locked[index] = False
+                return bot0_status, bot_control
+        random.seed(time.time())
+        random_number = random.randint(1, 100)
+        #构建随机数随机更新前一时刻的位置，防止每一帧都保存
+        if random_number % 4 == 0:
+            bot_location[index][0] = bots[index].x
+            bot_location[index][1] = bots[index].y
 
-        if dis < 0.5:
+        #到达预定拐点，重新锁定目标地点
+        if dis < 1:
             robot_control("rotate", Single_robot.id - 1, 0)
             robot_control("forward", Single_robot.id - 1, 0)
             bot0_status[index] = bot0_status_i + 1
 
         if abs(err) > math.pi / 18:
-            robot_control("forward", Single_robot.id - 1, 0.2)
+            robot_control("forward", Single_robot.id - 1, 1)
             robot_control("rotate", Single_robot.id - 1, err * 2)
         else:
             r_sei = math.pi / 2 - err
             r = dis / 2 / math.cos(r_sei)
             # 防止撞在墙上不能动
-            if bot0_status[index]%3 == 0:
+            if bot0_status[index] % 3 == 0:
                 xx = int(bots[index].x)
                 yy = int(bots[index].y)
                 direction_near = [[0, 0], [1, 0], [-1, 0], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1], [0, 1]]
@@ -126,19 +154,20 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
                     y = yy + direction_near[i][1]
                     if game_map_array[x][y] is '#':
                         if x == xx and y == yy:
-                            robot_control("forward", Single_robot.id - 1, 4)
+                            robot_control("forward", Single_robot.id - 1, 6)
                             robot_control("rotate", Single_robot.id - 1, -6 / r)
                             return bot0_status, bot_control
                         v1 = np.array(direction_near[i])
-                        v2 = np.array([path[index][min(len(path[index]) - 1, bot0_status_i)][0]-bots[index].x, path[index][min(len(path[index]) - 1, bot0_status_i)][1]-bots[index].y])
+                        v2 = np.array([path[index][min(len(path[index]) - 1, bot0_status_i)][0] - bots[index].x,
+                                       path[index][min(len(path[index]) - 1, bot0_status_i)][1] - bots[index].y])
                         v1_u = v1 / np.linalg.norm(v1)
                         v2_u = v2 / np.linalg.norm(v2)
                         theta = np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
-                        if theta < np.pi / 4:
-                            robot_control("forward", Single_robot.id - 1, 4)
+                        if theta < np.pi / 2:
+                            robot_control("forward", Single_robot.id - 1, 5)
                             robot_control("rotate", Single_robot.id - 1, -3 / r)
                             return bot0_status, bot_control
-            robot_control("forward", Single_robot.id - 1, 4)
+            robot_control("forward", Single_robot.id - 1, 5)
             robot_control("rotate", Single_robot.id - 1, 6 / r)
 
     return bot0_status, bot_control
