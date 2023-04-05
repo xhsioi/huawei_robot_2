@@ -31,7 +31,7 @@ class Node:
 
 
 # A*算法
-def astar(start, goal, obstacles, R):
+def astar(start, goal, obstacles):
     open_set = set()
     closed_set = set()
     current = start
@@ -39,8 +39,8 @@ def astar(start, goal, obstacles, R):
     counter = 1
     while open_set:
         counter += 1
-        if counter >= 10000:
-            return None
+        # if counter >= 10000:
+        #     return None
         current = min(open_set, key=lambda x: x.g + x.h)
         open_set.remove(current)
         closed_set.add(current)
@@ -52,11 +52,11 @@ def astar(start, goal, obstacles, R):
                 current = current.parent
             return path[::-1]
 
-        for neighbor in get_neighbors(current, obstacles, R):
+        for neighbor in get_neighbors(current, obstacles):
             if neighbor in closed_set:
                 continue
-
-            tentative_g = get_distance(current, neighbor)
+            # tentative_g = current.g+ 1/3*get_distance(current, neighbor)
+            tentative_g = 1/3*get_distance(current, neighbor)
             if neighbor not in open_set:
                 open_set.add(neighbor)
                 neighbor.h = get_distance(neighbor, goal)
@@ -69,32 +69,18 @@ def astar(start, goal, obstacles, R):
     return None
 
 
-# 判断点是否违法
-def is_valid_location(x, y, obstacles, R):
-    if x <= 0.25 or x >= 49.75 or y <= 0.25 or y >= 49.75:  # 超出边界，违法
-        return False
-    for obstacle in obstacles:
-        if (obstacle.x - R - 0.04 < x < obstacle.x + R + 0.04 and  # 进入障碍物，违法
-                obstacle.y - R - 0.04 < y < obstacle.y + R + 0.04):
-            return False
-    return True
 
 
 # 获取当前点的邻居点
-def get_neighbors(node, obstacles, R):
+def get_neighbors(node, obstacles):
     neighbors = []
-    if R == 0.45 + 0.25:
-        K = 4
-    else:
-        K = 2
     for x in range(-1, 2):
         for y in range(-1, 2):
             if x ==0 and y==0:
                 continue
-
-            if not is_valid_location(node.x + x / K, node.y + y / K, obstacles, R):
+            if node.x+x/4 < 0.25 or node.x+x/4 >49.75 or node.y+y/4 < 0.25 or node.y+y/4 >49.75 or Node(node.x+x/4,node.y+y/4) in obstacles:
                 continue
-            neighbor = Node(node.x + x / K, node.y + y / K)
+            neighbor = Node(node.x + x / 4, node.y + y / 4)
             neighbors.append(neighbor)
     return neighbors
 
@@ -109,22 +95,35 @@ def get_manhadundis(node1, node2):
 
 # 获取起点到目标点的路径参数：地图、起点、终点、机器人是否携带商品     #main函数只调用get_astar_path函数 其他不用
 def get_astar_path(game_map_array, rob_startpoint, goal, workstations, bot, iscarry):
-    print("牛牛牛\n", file=sys.stderr)
+    print("rob_startpoint:", rob_startpoint,file=sys.stderr)
+    print("goal:",goal,file=sys.stderr)
     # game_map_array,rob_startpoint,goal,workstations,bots[i]
-    obstacles = []
-    if iscarry == 0:
-        R = 0.25 + 0.45#携带产品，半径为机器人半径＋障碍物半径
-    else:
-        R = 0.45 + 0.25 + 0.08  # 携带产品，半径增加
+    obstacles = set()
     for i in range(len(game_map_array)):
         for j in range(len(game_map_array)):
             if game_map_array[i][j] == '#':  # 如果为‘#’，则为障碍物
-                obstacle = Node(0.25 + j * 0.5, (99.5 - i) * 0.5)
-                obstacles.append(obstacle)
+                x=0.25 + j * 0.5
+                y=(99.5 - i) * 0.5
+                obstacle = Node(x, y)
+    
+                obstacles.add(obstacle)
+                if iscarry==0:
+                    for xx in range(-2,3):
+                        for yy in range(-2,3):
+                            if (xx==0 and yy==0 ):
+                                continue
+                            obstacles.add(Node(x+xx/4,y+yy/4))
+                
+                if iscarry==1:
+                    for xx in range(-3,4):
+                        for yy in range(-3,4):
+                            if (xx==0 and yy==0 or abs(xx*yy)>=6 ):
+                                continue
+                            obstacles.add(Node(x+xx/4,y+yy/4))
 
     start = Node(rob_startpoint[0], rob_startpoint[1])  # 起点
     goal = Node(workstations[goal].x, workstations[goal].y)  # 终点
-    path = astar(start, goal, obstacles, R)  # 查找路径
+    path = astar(start, goal, obstacles)  # 查找路径
     if path:  # 找到路径则返回
         return path
     else:
@@ -135,15 +134,15 @@ def get_astar_path(game_map_array, rob_startpoint, goal, workstations, bot, isca
 
 
 
-def is_valid(x, y, obstacles,R):
+# def is_valid(x, y, obstacles,R):
 
-    if x < 0.25 or x > 49.75 or y <0.25 or y > 49.75:
-        return False
-    for obstacle in obstacles:
-        if (x > obstacle.x - R-0.04 and x < obstacle.x + R+0.04 and 
-            y > obstacle.y - R-0.04 and y < obstacle.y + R+0.04):
-            return False
-    return True
+#     if x < 0.25 or x > 49.75 or y <0.25 or y > 49.75:
+#         return False
+#     for obstacle in obstacles:
+#         if (x > obstacle.x - R-0.04 and x < obstacle.x + R+0.04 and 
+#             y > obstacle.y - R-0.04 and y < obstacle.y + R+0.04):
+#             return False
+#     return True
 
 
 def get_next(current,obstacles):
@@ -153,7 +152,7 @@ def get_next(current,obstacles):
             
             if x *y!=0:
                 continue
-            if not is_valid(current.x + x/2, current.y + y/2, obstacles,0.25+0.45+0.08):
+            if current.x+x < 0.25 or current.x+x >49.75 or current.y+y < 0.25 or current.y+y >49.75 or Node(current.x+x/4,current.y+y/4) in obstacles:
                 continue
             neighbor = Node(current.x+x/2,current.y+y/2)
             neighbors.append(neighbor)
@@ -184,40 +183,65 @@ def find_live_points(start, obstacles):
                 open_set.add(neighbor)
     return closed_set
 
-
-
-
-def set_oflivepoints(map_str):
-    
-    
-    obstacles =set()
-
-    for i in range(len(map_str)):
-        for j in range(len(map_str)):
-            if map_str[i][j] == '#':  # 如果为‘#’，则为障碍物
-                obstacle = Node(0.25 + j * 0.5, (99.5 - i) * 0.5)
-                obstacles.add(obstacle)
-            elif map_str[i][j]=='.':
-                start_point=Node(0.25 + j * 0.5, (99.5 - i) * 0.5)   
-
-    
-    
-    start=start_point
-       
-    # start=Node(start_x,start_y)
-    
-    live_poins=find_live_points(start,obstacles)
-    
-    return live_poins
-
-
-
 def is_live(live_points,pos_x,pos_y):
     pos=Node(pos_x,pos_y)
     if pos in live_points:
         return True
     else:
         return False
+
+
+def set_oflivepoints(map_str):
+    
+    
+    obstacles =set()
+    workstations=[]
+    for i in range(len(map_str)):
+        for j in range(len(map_str)):
+            if map_str[i][j] == '#':  # 如果为‘#’，则为障碍物
+                x=0.25 + j * 0.5
+                y=(99.5 - i) * 0.5
+                obstacle = Node(x, y)
+                iscarry=1
+                obstacles.add(obstacle)
+                if iscarry==0:
+                    for xx in range(-2,3):
+                        for yy in range(-2,3):
+                            if (xx==0 and yy==0 ):
+                                continue
+                            obstacles.add(Node(x+xx/4,y+yy/4))
+                
+                if iscarry==1:
+                    for xx in range(-3,4):
+                        for yy in range(-3,4):
+                            if (xx==0 and yy==0 or abs(xx*yy)>=6 ):
+                                continue
+                            obstacles.add(Node(x+xx/4,y+yy/4))
+                            
+            elif map_str[i][j]=='.':
+                start_point=Node(0.25 + j * 0.5, (99.5 - i) * 0.5) 
+                
+            elif map_str[i][j]!='#' and map_str[i][j]!='.' and map_str[i][j]!='A' and map_str[i][j]!='\n':
+               
+                workstation=Node(0.25+(j)*0.5,(99.5-i)*0.5)
+                workstations.append(workstation)
+
+    
+    
+    start=start_point
+       
+    # start=Node(start_x,start_y)
+    islive_worksations=np.full((len(workstations), 1),1)
+    live_poins=find_live_points(start,obstacles)
+    for i in range(len(workstations)):
+        if  not is_live(live_poins,workstations[i].x,workstations[i].y):
+            islive_worksations[i][0]=0
+            
+    return islive_worksations,live_poins
+
+
+
+
     
 
 

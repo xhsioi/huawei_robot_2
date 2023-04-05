@@ -7,6 +7,17 @@ Created on Sat Apr  1 21:08:45 2023
 
 import math
 import numpy as np
+
+def remove_triangles(path):
+    new_path = [path[0]]
+    i = 0
+    while i < len(path) - 2:
+        if not np.all(path[i] == path[i+2]):
+            new_path.append(path[i+1])
+            i += 1
+        i += 1
+    new_path.append(path[-1])
+    return np.array(new_path)
 def simplify_path(points, tolerance):
     """
     使用Douglas-Peucker算法对路径进行简化
@@ -59,10 +70,12 @@ def optimize_path(path):
     对机器人的路径进行优化，保留拐点
     """
     # 将路径转换为点列表
+    path=remove_triangles(path) 
+    path=remove_triangles(path) 
     points = [(path[i][0], path[i][1]) for i in range(len(path))]
 
     # 使用Douglas-Peucker算法对路径进行简化
-    tolerance = 0.4 # 阈值可以根据需要进行调整
+    tolerance = 0.3 # 阈值可以根据需要进行调整
     simplified_points = simplify_path(points, tolerance)
 
     # 将简化后的路径转换回原来的格式
