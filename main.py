@@ -11,11 +11,112 @@ from control import *
 from Astar import *
 from Dp import *
 
-bot_status = np.zeros(4)
+
 #如果给地图就初始化地图所有路径
 def load_path_information(workstations):
     None
-    
+
+def comput_workstation1_value1(workstation1, workstation2):
+    value1 = 3000
+    if workstation2.type == 4 or workstation2.type == 5 or workstation2.type == 6:
+        if workstation2.material_status != 0:  # 如果是345号工作台，且材料栏差一个就可以加工物品，则价值等于workstation1生产的物品价格加上workstation2的价格一半
+            value1 = workstation1.value + workstation2.value / 2
+        if workstation2.material_status == 0:
+            value1 = workstation1.value + workstation2.value / 4
+    elif workstation2.type == 7:
+        if workstation2.material_status == 0:
+            value1 = workstation1.value + workstation2.value / 6
+        if workstation2.material_status // 16 == 6 or workstation2.material_status // 16 == 5 or workstation2.material_status // 16 == 3:
+            value1 = workstation1.value + workstation2.value / 2
+        if workstation2.material_status // 16 == 1 or workstation2.material_status // 16 == 2 or workstation2.material_status // 16 == 4:
+            value1 = workstation1.value + workstation2.value / 4
+    elif workstation2.type == 8 or workstation2.type == 9:
+        value1 = workstation1.value
+    return value1
+
+
+def nextmin_dis_comput(work_type, workstation2):
+    flag = 0
+    nextmin_dis = math.inf
+    best_dis = 0
+    value3 = 0
+    best_j = 0
+    if work_type == 4:
+        for j in range(len(workstations)):
+            # if workstations_lock[j][4]!=0:
+            #     continue
+            if ((workstations[j].type == 7 and workstations[j].material_status % 32 == 0) or
+                    (workstations[j].type == 9)):
+                flag = 1
+                next_dis2 = np.linalg.norm(workstation2.pos - workstations[j].pos)
+                if next_dis2 < nextmin_dis:
+                    nextmin_dis = next_dis2
+                    best_dis = next_dis2
+                    best_j = j
+        value3 = flag * comput_workstation1_value1(workstation2, workstations[best_j])
+
+    if work_type == 5:
+        for j in range(len(workstations)):
+            # if workstations_lock[j][5]!=0:
+            #     continue
+            if ((workstations[j].type == 7 and workstations[j].material_status // 32 % 2 == 0) or
+                    (workstations[j].type == 9)):
+                flag = 1
+                next_dis2 = np.linalg.norm(workstation2.pos - workstations[j].pos)
+                if next_dis2 < nextmin_dis:
+                    nextmin_dis = next_dis2
+                    best_dis = next_dis2
+                    best_j = j
+        value3 = flag * comput_workstation1_value1(workstation2, workstations[best_j])
+
+    if work_type == 6:
+        for j in range(len(workstations)):
+            # if workstations_lock[j][6]!=0:
+            #     continue
+            if ((workstations[j].type == 7 and workstations[j].material_status < 64) or
+                    (workstations[j].type == 9)):
+                flag = 1
+                next_dis2 = np.linalg.norm(workstation2.pos - workstations[j].pos)
+                if next_dis2 < nextmin_dis:
+                    nextmin_dis = next_dis2
+                    best_dis = next_dis2
+                    best_j = j
+        value3 = flag * comput_workstation1_value1(workstation2, workstations[best_j])
+    if work_type == 7:
+        for j in range(len(workstations)):
+            # if fid>9000-700:
+            #     continue
+            if workstations[j].type == 8 or workstations[j].type == 9:
+                flag = 1
+                next_dis2 = np.linalg.norm(workstation2.pos - workstations[j].pos)
+                if next_dis2 < nextmin_dis:
+                    nextmin_dis = next_dis2
+                    best_dis = next_dis2
+                    best_j = j
+        value3 = flag * comput_workstation1_value1(workstation2, workstations[best_j])
+    return best_dis, flag, value3
+
+
+def workstations_value(workstation1, workstation2, dis1, dis2):
+    value1 = 3000
+    # value2=0
+    flag1 = 0
+    # flag2=0
+    nextmin_dis = 0
+    nextmin_dis2 = 0
+    work_type = workstation2.type
+    value2 = 0
+    if ((workstation2.product_status == 1) or (workstation2.proc_time < 150 and workstation2.proc_time >= 0)):
+        value2 = workstation2.value
+        nextmin_dis, flag1, _ = nextmin_dis_comput(work_type, workstation2)
+    nextmin_dis2, flag2, value3 = nextmin_dis_comput(work_type, workstation2)
+
+    value1 = comput_workstation1_value1(workstation1, workstation2)
+
+    all_value = (value1*Vaule_weight1 if flag1 == 0 else value1*Vaule_weight1 + value2 * flag1 * Vaule_weight1) + value3 * flag2 * Vaule_weight3
+    all_dis = dis1 + dis2 + nextmin_dis * flag1 + nextmin_dis2 * flag2 * Vaule_weight3
+    return all_dis / all_value    
+
 
 def get_path_distence(Single_robot,goal_station_id,map_all_workstation_path,iscarry):
     path=map_all_workstation_path[Single_robot.at_ws_id][goal_station_id][iscarry]
@@ -270,9 +371,8 @@ def bots_stop():
         robot_control("forward", i,0)
         robot_control("rotate", i,0)
 
-
-      
-def bots_coordinate_motion(map_all_workstation_path,start_paths):
+def bots_coordinate_motion(best_path, bot_status, bot_control,map_all_workstation_path, start_paths):
+      # def bots_coordinate_motion(map_all_workstation_path,start_paths):
     """
     控制机器人找目标、运动、更新路径等
 
@@ -331,14 +431,21 @@ def bots_coordinate_motion(map_all_workstation_path,start_paths):
                path=from_allpath_getpath(map_all_workstation_path[abs(rob_path_information[i][4])-1][goal],bots[i]) 
             elif rob_path_information[i][0]<0 and  rob_path_information[i][1]>0 :
                path=from_allpath_getpath(map_all_workstation_path[abs(rob_path_information[i][0])-1][goal],bots[i]) #path N行2列矩阵 
-            best_path= optimize_path(path)
-            bot_status[i]=control_to_goal(bots[i],best_path,bot_status[i])   #加返回值
+            # best_path= optimize_path(path)
+            # bot_status[i]=control_to_goal(bots[i],best_path,bot_status[i])   #加返回值
+            
+            
+            best_path[i] = optimize_path(path)
+            bot_status,bot_control = control_to_goal(bot_control , bots, best_path, bot_status, i)
         
         
         elif  rob_path_information[i][3]!=-100 and rob_path_information[i][4]==-100:  
             path=from_allpath_getpath(map_all_workstation_path[rob_path_information[i][3]-1][goal],bots[i]) 
-            best_path= optimize_path(path)
-            bot_status[i]=control_to_goal(bots[i],best_path,bot_status[i])   #加返回值
+            # best_path= optimize_path(path)
+            # bot_status[i]=control_to_goal(bots[i],best_path,bot_status[i])   #加返回值
+            
+            best_path[i] = optimize_path(path)
+            bot_status,bot_control = control_to_goal(bot_control , bots, best_path, bot_status, i)
             
             
         else:
@@ -349,8 +456,11 @@ def bots_coordinate_motion(map_all_workstation_path,start_paths):
                 path[co][0]=node.x
                 path[co][1]=node.y
                 co+=1
-            best_path= optimize_path(path)
-            bot_status[i]=control_to_goal(bots[i],best_path,bot_status[i])
+            # best_path= optimize_path(path)
+            # bot_status[i]=control_to_goal(bots[i],best_path,bot_status[i])
+            
+            best_path[i] = optimize_path(path)
+            bot_status,bot_control = control_to_goal(bot_control , bots, best_path, bot_status, i)
 
             
     return map_all_workstation_path,start_paths
@@ -386,7 +496,43 @@ def bots_operator():  # 进行购买 出售操作
                 rob_path_information[robot.id - 1][4]=abs(rob_path_information[robot.id - 1][1])
                 rob_startpoint[robot.id-1][0]=robot.x
                 rob_startpoint[robot.id-1][1]=robot.y
+ 
                 
+def update_workstation_value():
+    for i in range(len(workstations)):
+        if workstations[i].type==7:
+            if workstations[i].material_status==2**4+2**5:
+                for j in range(len(workstations)): 
+                    if workstations[i].type==6:
+                        workstations[i].value=(27500-19200)*2
+            elif workstations[i].material_status==2**4+2**6:
+                for j in range(len(workstations)): 
+                    if workstations[i].type==5:
+                        workstations[i].value=(25000-17200)*2
+            elif workstations[i].material_status==2**5+2**6:
+                for j in range(len(workstations)): 
+                    if workstations[i].type==4:
+                        workstations[i].value=(22500-15400)*2
+                        
+            elif workstations[i].material_status==2**4:
+                for j in range(len(workstations)): 
+                    if workstations[i].type==5:
+                        workstations[i].value=(25000-17200)*1.5
+                    if workstations[i].type==4:
+                        workstations[i].value=(27500-19200)*1.5
+            
+            elif workstations[i].material_status==2**5:
+                for j in range(len(workstations)): 
+                    if workstations[i].type==6:
+                        workstations[i].value=(27500-19200)*1.5
+                    if workstations[i].type==4:
+                        workstations[i].value=(22500-15400)*1.5
+            elif workstations[i].material_status==2**6:
+                for j in range(len(workstations)): 
+                    if workstations[i].type==5:
+                        workstations[i].value=(25000-17200)*1.5
+                    if workstations[i].type==4:
+                        workstations[i].value=(22500-15400)*1.5
                 
                 
                 
@@ -428,13 +574,22 @@ if __name__ == '__main__':
     # 获取地图(100x100数组)
     game_map_array = init()
     
+    #获取机器人状态夏夏夏
+    bot_control = np.full(4, False)
+    bot_status = np.zeros(4)
+    best_path = np.full(4,list)
+    
+    
     #获取工作台和机器人的数目
     workstations_number,bots_number=get_numbers(game_map_array)
     
     #获取没有被围死的点
     islive_worksations,live_points=set_oflivepoints(game_map_array)
     
-    
+    #初始化价值系数
+    Vaule_weight1 = 0.1
+    Vaule_weight2 = 0.1
+    Vaule_weight3 = 0.1
     
     #判断是否公示地图 这里目前都是没有
     ishavemap=is_have_map(4)
@@ -445,7 +600,7 @@ if __name__ == '__main__':
     # 初始化工作台锁
     workstations_lock = np.full((workstations_number, 8), 0)
     
-    # 初始化机器人路径信息  #vision1.0不考虑rob_path_information[][3\4]  
+    # 初始化机器人路径信息  
     rob_path_information = np.full((bots_number, 5), -100)
     
     # 结束初始化
@@ -484,9 +639,11 @@ if __name__ == '__main__':
         
         
         #每一帧开始运动
-        # update_workstation_value()  # 更新价值，每一个种路径都有价值，此价值是动态的，需要更新
+        update_workstation_value()  # 更新价值，每一个种路径都有价值，此价值是动态的，需要更新
         
-        map_all_workstation_path,start_paths=bots_coordinate_motion(map_all_workstation_path,start_paths)  # 控制多个机器人运动，包括目标选取、路径选择
+        map_all_workstation_path, start_paths = bots_coordinate_motion(best_path,
+                      bot_status, bot_control, map_all_workstation_path,start_paths) 
+        # map_all_workstation_path,start_paths=bots_coordinate_motion(map_all_workstation_path,start_paths)  # 控制多个机器人运动，包括目标选取、路径选择
         bots_operator()  # 控制单个机器人进行购买、销售、销毁操作，并更新一些全局变量
         
 

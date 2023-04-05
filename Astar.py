@@ -55,8 +55,8 @@ def astar(start, goal, obstacles):
         for neighbor in get_neighbors(current, obstacles):
             if neighbor in closed_set:
                 continue
-
-            tentative_g = get_distance(current, neighbor)
+            # tentative_g = current.g+ 1/3*get_distance(current, neighbor)
+            tentative_g = 1/3*get_distance(current, neighbor)
             if neighbor not in open_set:
                 open_set.add(neighbor)
                 neighbor.h = get_distance(neighbor, goal)

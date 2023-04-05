@@ -71,6 +71,7 @@ def optimize_path(path):
     """
     # 将路径转换为点列表
     path=remove_triangles(path) 
+    path=remove_triangles(path) 
     points = [(path[i][0], path[i][1]) for i in range(len(path))]
 
     # 使用Douglas-Peucker算法对路径进行简化
