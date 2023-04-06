@@ -436,8 +436,8 @@ def bots_coordinate_motion(best_path, bot_status, bot_control,map_all_workstatio
             
             
             best_path[i] = optimize_path(path)
-            bot_status,bot_control = control_to_goal(bot_control , bots, best_path, bot_status, i)
-        
+            # bot_status,bot_control = control_to_goal(bot_control , bots, best_path, bot_status, i)
+            bot_status,bot_control = control_to_goal(game_map_array, bot_control , bots, best_path, bot_status, i)
         
         elif  rob_path_information[i][3]!=-100 and rob_path_information[i][4]==-100:  
             path=from_allpath_getpath(map_all_workstation_path[rob_path_information[i][3]-1][goal],bots[i]) 
@@ -445,8 +445,8 @@ def bots_coordinate_motion(best_path, bot_status, bot_control,map_all_workstatio
             # bot_status[i]=control_to_goal(bots[i],best_path,bot_status[i])   #加返回值
             
             best_path[i] = optimize_path(path)
-            bot_status,bot_control = control_to_goal(bot_control , bots, best_path, bot_status, i)
-            
+            # bot_status,bot_control = control_to_goal(bot_control , bots, best_path, bot_status, i)
+            bot_status,bot_control = control_to_goal(game_map_array, bot_control , bots, best_path, bot_status, i)
             
         else:
             path1=start_paths[i]["path_of_noproduct"]
@@ -460,8 +460,8 @@ def bots_coordinate_motion(best_path, bot_status, bot_control,map_all_workstatio
             # bot_status[i]=control_to_goal(bots[i],best_path,bot_status[i])
             
             best_path[i] = optimize_path(path)
-            bot_status,bot_control = control_to_goal(bot_control , bots, best_path, bot_status, i)
-
+            # bot_status,bot_control = control_to_goal(bot_control , bots, best_path, bot_status, i)
+            bot_status,bot_control = control_to_goal(game_map_array, bot_control , bots, best_path, bot_status, i)
             
     return map_all_workstation_path,start_paths
   
