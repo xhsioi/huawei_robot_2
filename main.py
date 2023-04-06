@@ -334,7 +334,7 @@ def init_workstations_path(ishavemap):
     None
   
 #从map_all_workstation_path获取path
-def from_allpath_getpath(path_Node,bot):
+def from_allpath_getpath(path_Node,bot,ca):
     """
     从Node类的路径转换到np数组类的路径
 
@@ -348,12 +348,15 @@ def from_allpath_getpath(path_Node,bot):
     path : np数组，
     """
     path1=[]
-    if bot.carried_item_type==0:
+    if ca==0:
         path1=path_Node["path_of_noproduct"]
     else:
         path1=path_Node["path_of_product"] 
     if path1==None:
+        # print("rob_path_informationz:\n",rob_path_information,file=sys.stderr)
         print("cuowu:\n",bot.id,file=sys.stderr)
+        # print("cuowu:\n",path_Node["path_of_noproduct"],file=sys.stderr)
+        # print("cuowu:\n",map_all_workstation_path[0][5]["path_of_product"],file=sys.stderr)
         path=np.full((1, 2), 0.0)
     else:
         
@@ -428,9 +431,9 @@ def bots_coordinate_motion(best_path, bot_status, bot_control,map_all_workstatio
         """   
         if rob_path_information[i][3]!=-100 and rob_path_information[i][4]!=-100:
             if rob_path_information[i][0]>0 :  #如果第一个目标没完成，路径为上个目标到这个目标
-               path=from_allpath_getpath(map_all_workstation_path[abs(rob_path_information[i][4])-1][goal],bots[i]) 
+               path=from_allpath_getpath(map_all_workstation_path[abs(rob_path_information[i][4])-1][goal],bots[i],0) 
             elif rob_path_information[i][0]<0 and  rob_path_information[i][1]>0 :
-               path=from_allpath_getpath(map_all_workstation_path[abs(rob_path_information[i][0])-1][goal],bots[i]) #path N行2列矩阵 
+               path=from_allpath_getpath(map_all_workstation_path[abs(rob_path_information[i][0])-1][goal],bots[i],1) #path N行2列矩阵 
             # best_path= optimize_path(path)
             # bot_status[i]=control_to_goal(bots[i],best_path,bot_status[i])   #加返回值
             
@@ -440,7 +443,7 @@ def bots_coordinate_motion(best_path, bot_status, bot_control,map_all_workstatio
             bot_status,bot_control = control_to_goal(game_map_array, bot_control , bots, best_path, bot_status, i)
         
         elif  rob_path_information[i][3]!=-100 and rob_path_information[i][4]==-100:  
-            path=from_allpath_getpath(map_all_workstation_path[rob_path_information[i][3]-1][goal],bots[i]) 
+            path=from_allpath_getpath(map_all_workstation_path[rob_path_information[i][3]-1][goal],bots[i],bots[i].carried_item_type) 
             # best_path= optimize_path(path)
             # bot_status[i]=control_to_goal(bots[i],best_path,bot_status[i])   #加返回值
             

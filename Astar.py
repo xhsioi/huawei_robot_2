@@ -10,6 +10,7 @@ import numpy as np
 from model import *
 from Dp import *
 import time
+
 # 地图大小50×50米
 MAP_SIZE = (50, 50)
 
@@ -268,8 +269,10 @@ def get_astar_path(game_map_array, rob_startpoint, goal, workstations, bot, isca
                         
     start = Node(rob_startpoint[0], rob_startpoint[1])  # 起点
     goal = Node(workstations[goal].x, workstations[goal].y)  # 终点
+    path1=[]
     path1 = astar(start, goal, obstacles)  # 查找路径
     path=[]
+    # path.append([bot.x,bot.y])
     for node in path1:
         path.append([node.x,node.y])
     
