@@ -70,12 +70,13 @@ def optimize_path(path):
     对机器人的路径进行优化，保留拐点
     """
     # 将路径转换为点列表
-    path=remove_triangles(path) 
-    path=remove_triangles(path) 
+    # path=remove_triangles(path) 
+    # path=remove_triangles(path) 
+    # path=remove_triangles(path) 
     points = [(path[i][0], path[i][1]) for i in range(len(path))]
 
     # 使用Douglas-Peucker算法对路径进行简化
-    tolerance = 0.3 # 阈值可以根据需要进行调整
+    tolerance = 0.11# 阈值可以根据需要进行调整
     simplified_points = simplify_path(points, tolerance)
 
     # 将简化后的路径转换回原来的格式
@@ -83,16 +84,16 @@ def optimize_path(path):
     for i in range(len(simplified_points)):
         x, y = simplified_points[i]
         optimized_path.append([x, y])
-        if i < len(simplified_points) - 1 and simplified_points[i+1][0] != x and simplified_points[i+1][1] != y:
-            # 如果下一个点和当前点的x或y坐标不相等，则插入一个拐点
-            optimized_path.append([x, y])
+        # if i < len(simplified_points) - 1 and simplified_points[i+1][0] != x and simplified_points[i+1][1] != y:
+        #     # 如果下一个点和当前点的x或y坐标不相等，则插入一个拐点
+        #     optimized_path.append([x, y])
      
             
-    best_path=np.full((len(optimized_path), 2), 0.0) 
-    i=0
-    for node in optimized_path:
-        # print(node.x, node.y)
-        best_path[i][0]=node[0]
-        best_path[i][1]=node[1]
-        i+=1
-    return best_path
+    # best_path=np.full((len(optimized_path), 2), 0.0) 
+    # i=0
+    # for node in optimized_path:
+    #     # print(node.x, node.y)
+    #     best_path[i][0]=node[0]
+    #     best_path[i][1]=node[1]
+    #     i+=1
+    return optimized_path
