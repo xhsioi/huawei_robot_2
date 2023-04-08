@@ -8,12 +8,11 @@ Created on Thu Apr  6 20:47:37 2023
 import numpy as np
 import sys
 import math
-import random
-import time
 
+coun=25
 bot_location = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]
 bot_locked = np.full(4, False)
-location_count = np.full(4, 100)
+location_count = np.full(4, coun)
 
 
 class Point:
@@ -55,10 +54,14 @@ def intersection(p1, p2, p3, p4):
     return True
 
 
-def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index):
+#实现对机器人的控制，包括到达目标点、防止撞墙撞死、防止对撞撞死
+def control_to_goal(game_map_array, bots, path, bot0_status, index):
     Single_robot = bots[index]
     connect_set = [-1, 1]
     # 防止撞死：
+    # if len(path[index])==1:
+        
+    #     return bot0_status
     for j in range(4):
         if j != bots[index].id - 1 and type(path[j]) is list:
             if j > index:
@@ -76,8 +79,8 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
             # 判断两个机器人之间的距离,出现对撞后进行避让
             if distance(p1, p3) <= 1.10 and index < j:
                 robot_control("forward" , bots[index].id-1 , -2)
-                robot_control("rotate", bots[index].id - 1, np.pi/4)
-                return bot0_status, bot_control
+                robot_control("rotate", bots[index].id - 1, np.pi/6)
+                return bot0_status
             if intersection(p1, p3, p2, p4):
                 # 求交点
                 px = ((p1.x * p2.y - p1.y * p2.x) * (p3.x - p4.x) - (p1.x - p2.x) * (p3.x * p4.y - p3.y * p4.x)) / (
@@ -89,17 +92,17 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
                 if (math.fabs(dot(p2-p1,p4-p3)) > 0.8*distance(p2-p1 , Point(0,0))*distance(p4-p3 , Point(0,0))) and distance(p1, p3) < 2 and index < j:
                     robot_control("forward", bots[index].id - 1, -2)
                     robot_control("rotate", bots[index].id - 1, connect_set[0] * np.pi)
-                    return bot0_status, bot_control
+                    return bot0_status
                 if distance(intersect, p1) < 4 and distance(intersect, p3) < 2 and index < j:
                     robot_control("forward", bots[index].id - 1, -2)
                     robot_control("rotate", bots[index].id - 1, connect_set[0] * np.pi)
-                    return bot0_status, bot_control
+                    return bot0_status
 
     # 如果不存在路径，保持静止状态
     if path[index][0][0] == 0:
         robot_control("rotate", Single_robot.id - 1, 0)
         robot_control("forward", Single_robot.id - 1, 0)
-        return bot0_status, bot_control
+        return bot0_status
     # 当路径上存在目标，进行直行、旋转、防撞死等操作
     else:
         bot0_status_i = int(bot0_status[index])
@@ -122,7 +125,7 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
         r = dis / 2 / math.cos(r_sei)
 
         # 防止撞在墙上不能动
-        if location_count[index] == 100:
+        if location_count[index] == coun:
             bot_location[index][0] = bots[index].x
             bot_location[index][1] = bots[index].y
             location_count[index] = 0
@@ -131,10 +134,10 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
                                                                                     Point(bot_location[index][0],
                                                                                           bot_location[index][
                                                                                               1])) < 0.01 and \
-                location_count[index] == 100:
+                location_count[index] == coun:
             bot0_status[index] = max(bot0_status[index] - 1, 0)
             robot_control("forward",bots[index].id-1 , -2)
-            return bot0_status, bot_control
+            return bot0_status
 
         # #如果已经标记为撞死，或者接近撞死状态（与之前的位置信息进行比较）
         # if bot_locked[index] or (bot_location[index][0] != 0 and bot_location[index][1] != 0 and distance(
@@ -154,7 +157,7 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
         #         if distance(Point(bots[index].x, bots[index].y),
         #                     Point(bot_location[index][0], bot_location[index][1])) > 0.25:
         #             bot_locked[index] = False
-        #         return bot0_status, bot_control
+        #         return bot0_status
         # random.seed(time.time())
         # random_number = random.randint(1, 100)
         # #构建随机数随机更新前一时刻的位置，防止每一帧都保存
@@ -164,8 +167,8 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
 
         # 到达预定拐点，重新锁定目标地点
         # RR=dis/2/math.cos(math.pi/10)
-
-        if dis < 0.2:
+        
+        if dis < 0.1:
             # robot_control("rotate", Single_robot.id - 1, 0)
             # robot_control("forward", Single_robot.id - 1, 0)
             bot0_status[index] = bot0_status_i + 1
@@ -175,7 +178,7 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
         #             robot_control("forward", Single_robot.id - 1, -0.0)
         #             robot_control("rotate", Single_robot.id - 1, err*5)
         #     else:                    
-        #         #                 return bot0_status, bot_control
+        #         #                 return bot0_status
         #         w=math.pi/2
         #         v=w*RR
         #         robot_control("forward", Single_robot.id - 1, v)
@@ -185,13 +188,19 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
         #             robot_control("forward", Single_robot.id - 1, -0.0)
         #             robot_control("rotate", Single_robot.id - 1, err*5)
         #     else:                    
-        #         #                 return bot0_status, bot_control
+        #         #                 return bot0_status
         #         w=6/RR
         #         v=6
         #         robot_control("forward", Single_robot.id - 1, v)
         #         robot_control("rotate", Single_robot.id - 1, w)
+        # if index==2:
+        print("target:",target1,bots[index].id,file=sys.stderr)
+
         if dis<1:
-            if abs(err) > math.pi / 18:
+            if abs(err) > math.pi / 4 :
+                robot_control("forward", Single_robot.id - 1, -1)
+                robot_control("rotate", Single_robot.id - 1, err*10)
+            elif abs(err) > math.pi / 18:
                 robot_control("forward", Single_robot.id - 1, -0.1)
                 robot_control("rotate", Single_robot.id - 1, err*10)
             else:
@@ -203,7 +212,7 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
                     robot_control("forward", Single_robot.id - 1, v)
                     robot_control("rotate", Single_robot.id - 1, w)
                 else:                    
-                    #                 return bot0_status, bot_control
+                    #                 return bot0_status
                     v=2
                     w=v/r
                     
@@ -225,10 +234,10 @@ def control_to_goal(game_map_array, bot_control, bots, path, bot0_status, index)
                     robot_control("forward", Single_robot.id - 1, v)
                     robot_control("rotate", Single_robot.id - 1, w)
                 else:                    
-                    #                 return bot0_status, bot_control
+                    #                 return bot0_status
                     w=6/r
                     v=6
                     robot_control("forward", Single_robot.id - 1, v)
                     robot_control("rotate", Single_robot.id - 1, w)
 
-    return bot0_status, bot_control
+    return bot0_status

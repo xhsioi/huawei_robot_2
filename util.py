@@ -12,20 +12,20 @@ def init():
     while input() != "OK":
         pass
 
-    
-
     return game_map
 
+
 def get_numbers(game_map):
-    workstations_number=0
-    bots_number=0
+    workstations_number = 0
+    bots_number = 0
     for line in game_map:
         for pos in line:
-            if pos=='A':
-               bots_number+=1 
+            if pos == 'A':
+                bots_number += 1
             if pos != '.' and pos != 'A' and pos != '#' and pos != '\n':
-                workstations_number+=1
-    return workstations_number,  bots_number
+                workstations_number += 1
+    return workstations_number, bots_number
+
 
 def get_ws_config(game_map):
     ws_config = np.full(10, 0)
@@ -38,7 +38,7 @@ def get_ws_config(game_map):
     return ws_config
 
 
-#获取墙壁信息
+# 获取墙壁信息
 def get_wall_config(game_map):
     wall_config = []
     wall_number = 0
@@ -48,7 +48,7 @@ def get_wall_config(game_map):
                 temp = [i, j]
                 wall_number = wall_number + 1
                 wall_config.append(temp)
-    return wall_number,wall_config
+    return wall_number, wall_config
 
 
 def robot_control(order, _id, value=None):  # 定义了一个名为robot_control的函数，输入指令，机器人id ，参数即可操控机器人

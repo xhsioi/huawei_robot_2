@@ -18,6 +18,8 @@ def remove_triangles(path):
         i += 1
     new_path.append(path[-1])
     return np.array(new_path)
+
+
 def simplify_path(points, tolerance):
     """
     使用Douglas-Peucker算法对路径进行简化
@@ -45,6 +47,7 @@ def simplify_path(points, tolerance):
 
     # 返回简化后的路径
     return left[:-1] + right
+
 
 def perpendicular_distance(point, line_start, line_end):
     """
