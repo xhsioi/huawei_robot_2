@@ -56,13 +56,13 @@ $$
 2. 初始化：将起点放入$open$列表，并设置其$f$值为起点到终点的估价函数值。将其$g$值设为0。设置$f=g+h$,在本项目中$g$表示起点到当前位置的欧式距离。$h$根据地图的不同选取不同的启发式函数，较为复杂，障碍物杂乱的地图中使用欧式距离作为启发式函数：
 
 
-   $$
+$$
    h=\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}
-   $$
+$$
    在类似城市道路的地图，如由横线与竖线划分房间的图采用曼哈顿距离作为启发式函数：
-   $$
+$$
    h=|x_2-x_1|+|y_2-y_1|
-   $$
+$$
 
 3. 循环执行以下操作：
 
@@ -360,7 +360,7 @@ def control_to_goal(bots, bot, target1, isfinish, start_loc):
 - 对价值系数进行动态调整，根据地图变化给出不同的参数；
 - 对整体代码进行重构，优化代码结构；
 
-![Untitled](%E5%8D%8E%E4%B8%BA%E8%BD%AF%E4%BB%B6%E7%B2%BE%E8%8B%B1%E6%8C%91%E6%88%98%E8%B5%9B%E2%80%94%E2%80%94%E6%99%AE%E6%9C%97%E5%85%8B%E8%AE%A1%E5%88%92%20a0963dd0669242a7b21458a4f785c93e/Untitled.png)
+![4.png](https://github.com/xhsioi/blog-img/blob/xhsioi_blog/%E5%8D%8E%E4%B8%BA%E8%BD%AF%E4%BB%B6%E7%B2%BE%E8%8B%B1%E6%8C%91%E6%88%98%E8%B5%9B/4.png?raw=true)
 
 ## 比赛成果
 
@@ -595,6 +595,6 @@ for j in range(4):
 
 爽啊，很爽啊~先贴个日程表：
 
-![Untitled](%E5%8D%8E%E4%B8%BA%E8%BD%AF%E4%BB%B6%E7%B2%BE%E8%8B%B1%E6%8C%91%E6%88%98%E8%B5%9B%E2%80%94%E2%80%94%E6%99%AE%E6%9C%97%E5%85%8B%E8%AE%A1%E5%88%92%20a0963dd0669242a7b21458a4f785c93e/Untitled%201.png)
+![5.png](https://github.com/xhsioi/blog-img/blob/xhsioi_blog/%E5%8D%8E%E4%B8%BA%E8%BD%AF%E4%BB%B6%E7%B2%BE%E8%8B%B1%E6%8C%91%E6%88%98%E8%B5%9B/5.png?raw=true)
 
 整体而言，华为的食堂比大工好吃多了（废话），感觉下午茶茶点也不错。娱乐游戏很不错，就是很抽象。（感谢天神的积极答题，给我抢了个纪念品）晚宴确实顶，二十个菜恩造，神中神。明年再来！
